@@ -3,6 +3,9 @@ import os
 from flask import Flask
 import movie_app.adapters.repository as repo
 from movie_app.adapters.memory_repository import MemoryRepository, populate
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, clear_mappers
+from sqlalchemy.pool import NullPool
 
 
 def create_app(test_config=None):
