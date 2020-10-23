@@ -1,4 +1,4 @@
-from sqlalchemy import Table, MetaData, Column, Integer, String, Date, DateTime, ForeignKey, Float
+from sqlalchemy import Table, MetaData, Column, Integer, String, DateTime, ForeignKey, Float
 from sqlalchemy.orm import mapper, relationship
 from movie_app.domain import model
 
@@ -82,31 +82,47 @@ user_watched_movies = Table(
     Column('movie_id', ForeignKey('movies.id'))
 )
 
-# Continue here
+
 def map_model_to_tables():
+    mapper(model.Director, directors, properties={
+        '__director_full_name': directors.c.director_full_name
+    })
+
+    genre_mapper = mapper(model.Genre, genres, properties={
+        '__genre_name': genres.c.genre_name
+    })
+
+    actor_mapper = mapper(model.Actor, actors, properties={
+        '__actor_full_name': actors.c.actor_full_name,
+        '__actor_colleague': relationship(model.Actor, secondary=actor_colleagues, backref='_actor')
+    })
+
+    movie_mapper = mapper(model.Movie, movies, properties={
+        '__title': movies.c.title,
+        '__release_year': movies.c.release_year,
+        '__rank': movies.c.id,
+        '__description': movies.c.description,
+        '__director': relationship(model.Director, backref='_movie'),
+        '__actors': relationship(actor_mapper, secondary=movie_actors, backref='_movie'),
+        '__genres': relationship(genre_mapper, secondary=movie_genres, backref='_movie'),
+        '__runtime_minutes': movies.c.runtime_minutes,
+        '__rating': movies.c.rating,
+        '__votes': movies.c.votes,
+        '__revenue': movies.c.revenue,
+        '__metascore': movies.c.metascore
+    })
+
+    mapper(model.Review, reviews, properties={
+        '__movie': relationship(model.Movie, backref='_review'),
+        '__review_text': reviews.c.review_text,
+        '__rating': reviews.c.rating,
+        '__timestamp': reviews.c.timestamp
+    })
+
     mapper(model.User, users, properties={
-        '_username': users.c.username,
+        '__user_name': users.c.username,
         '_password': users.c.password,
-        '_comments': relationship(model.Comment, backref='_user')
-    })
-    mapper(model.Comment, comments, properties={
-        '_comment': comments.c.comment,
-        '_timestamp': comments.c.timestamp
-    })
-    articles_mapper = mapper(model.Article, articles, properties={
-        '_id': articles.c.id,
-        '_date': articles.c.date,
-        '_title': articles.c.title,
-        '_first_para': articles.c.first_para,
-        '_hyperlink': articles.c.hyperlink,
-        '_image_hyperlink': articles.c.image_hyperlink,
-        '_comments': relationship(model.Comment, backref='_article')
-    })
-    mapper(model.Tag, tags, properties={
-        '_tag_name': tags.c.name,
-        '_tagged_articles': relationship(
-            articles_mapper,
-            secondary=article_tags,
-            backref="_tags"
-        )
+        '__watched_movies': relationship(movie_mapper, secondary=user_watched_movies, backref='_user'),
+        '__reviews': relationship(model.Review, backref='_user'),
+        '__time_spent_watching_movies_minutes': users.c.time_spent_watching_movies_minutes
     })
