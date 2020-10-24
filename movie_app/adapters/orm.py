@@ -39,7 +39,7 @@ movies = Table(
     Column('runtime_minutes', Integer, nullable=False),
     Column('rating', Float, nullable=True),
     Column('votes', Integer, nullable=True),
-    Column('revenue', Float, nullable=True),
+    Column('revenue_in_millions', Float, nullable=True),
     Column('metascore', Integer, nullable=True)
 )
 
@@ -108,7 +108,7 @@ def map_model_to_tables():
         '__runtime_minutes': movies.c.runtime_minutes,
         '__rating': movies.c.rating,
         '__votes': movies.c.votes,
-        '__revenue': movies.c.revenue,
+        '__revenue': movies.c.revenue_in_millions,
         '__metascore': movies.c.metascore
     })
 
