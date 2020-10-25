@@ -71,42 +71,42 @@ users = Table(
 
 def map_model_to_tables():
     mapper(model.Director, directors, properties={
-        '__director_full_name': directors.c.director_full_name
+        '_Director__director_full_name': directors.c.director_full_name
     })
 
     genre_mapper = mapper(model.Genre, genres, properties={
-        '__genre_name': genres.c.genre_name
+        '_Genre__genre_name': genres.c.genre_name
     })
 
     actor_mapper = mapper(model.Actor, actors, properties={
-        '__actor_full_name': actors.c.actor_full_name
+        '_Actor__actor_full_name': actors.c.actor_full_name
     })
 
     mapper(model.Movie, movies, properties={
-        '__rank': movies.c.id,
-        '__title': movies.c.title,
-        '__release_year': movies.c.release_year,
-        '__description': movies.c.description,
-        '__runtime_minutes': movies.c.runtime_minutes,
-        '__rating': movies.c.rating,
-        '__votes': movies.c.votes,
-        '__revenue': movies.c.revenue_in_millions,
-        '__metascore': movies.c.metascore,
-        '__director': relationship(model.Director, backref='_movie'),
-        '__actors': relationship(actor_mapper, secondary=movie_actors, backref='_movie'),
-        '__genres': relationship(genre_mapper, secondary=movie_genres, backref='_movie'),
+        '_Movie__rank': movies.c.id,
+        '_Movie__title': movies.c.title,
+        '_Movie__release_year': movies.c.release_year,
+        '_Movie__description': movies.c.description,
+        '_Movie__runtime_minutes': movies.c.runtime_minutes,
+        '_Movie__rating': movies.c.rating,
+        '_Movie__votes': movies.c.votes,
+        '_Movie__revenue': movies.c.revenue_in_millions,
+        '_Movie__metascore': movies.c.metascore,
+        '_Movie__director': relationship(model.Director, backref='_movie'),
+        '_Movie__actors': relationship(actor_mapper, secondary=movie_actors, backref='_movie'),
+        '_Movie__genres': relationship(genre_mapper, secondary=movie_genres, backref='_movie'),
     })
 
     mapper(model.Review, reviews, properties={
-        '__review_text': reviews.c.review_text,
-        '__rating': reviews.c.rating,
-        '__timestamp': reviews.c.timestamp,
-        '__movie': relationship(model.Movie, backref='_review'),
+        '_Review__review_text': reviews.c.review_text,
+        '_Review__rating': reviews.c.rating,
+        '_Review__timestamp': reviews.c.timestamp,
+        '_Review__movie': relationship(model.Movie, backref='_review'),
     })
 
     mapper(model.User, users, properties={
-        '__user_name': users.c.username,
-        '__password': users.c.password,
-        '__time_spent_watching_movies_minutes': users.c.time_spent_watching_movies_minutes,
-        '__reviews': relationship(model.Review, backref='_user')
+        '_User__user_name': users.c.username,
+        '_User__password': users.c.password,
+        '_User__time_spent_watching_movies_minutes': users.c.time_spent_watching_movies_minutes,
+        '_User__reviews': relationship(model.Review, backref='_user')
     })

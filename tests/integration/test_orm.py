@@ -24,7 +24,7 @@ def insert_genres(empty_session):
 
 def insert_actors(empty_session):
     empty_session.execute(
-        'INSERT INTO actors (actor_full_values) VALUES ("Scarlet"), ("Xull")'
+        'INSERT INTO actors (actor_full_name) VALUES ("Scarlet"), ("Xull")'
     )
     rows = list(empty_session.execute('SELECT id from actors'))
     keys = tuple(row[0] for row in rows)
@@ -87,8 +87,8 @@ def insert_reviewed_movie(empty_session):
 
     empty_session.execute(
         'INSERT INTO reviews (movie_id, review_text, rating, timestamp, user_id) VALUES '
-        '(:movie_id, "Review 1", :timestamp_1, :user_id), '
-        '(:movie_id, "Review 2", :timestamp_2, :user_id)',
+        '(:movie_id, "Review 1", 1, :timestamp_1, :user_id), '
+        '(:movie_id, "Review 2", 2, :timestamp_2, :user_id)',
         {'movie_id': movie_key, 'timestamp_1': timestamp_1, 'timestamp_2': timestamp_2, 'user_id': user_key}
     )
 
@@ -125,7 +125,7 @@ def make_movie():
 
 
 def make_user():
-    user = User("Bob", "123")
+    user = User("bob", "123")
     return user
 
 
@@ -136,7 +136,7 @@ def test_loading_of_movie(empty_session):
     fetched_movie = empty_session.query(Movie).one()
 
     assert expected_movie == fetched_movie
-    assert movie_key == fetched_movie.id
+    assert movie_key == fetched_movie.rank
 
 
 def test_saving_of_movie(empty_session):
@@ -147,7 +147,7 @@ def test_saving_of_movie(empty_session):
 
     rows = list(empty_session.execute('SELECT id, title, release_year, description, director_id, runtime_minutes, '
                                       'rating, votes, revenue_in_millions, metascore FROM movies'))
-    assert rows == [(1001, "WOW", 2020, "This is the best movie in the world.", 1, 100, 100, 100, 100, 100)]
+    assert rows == [(1001, "WOW", 2020, "This is the best movie in the world.", 3, 100, 100.0, 100, 100.0, 100)]
 
 
 def test_loading_of_movie_actors(empty_session):
@@ -234,13 +234,13 @@ def test_saving_movie_genres(empty_session):
 
 def test_loading_of_users(empty_session):
     users = list()
-    users.append(("Bob", "Thisisbob1"))
-    users.append(("Not Bob", "1234"))
+    users.append(("bob", "Thisisbob1"))
+    users.append(("not bob", "1234"))
     insert_users(empty_session, users)
 
     expected = [
-        User("Bob", "Thisisbob1"),
-        User("Not Bob", "123456789")
+        User("bob", "Thisisbob1"),
+        User("not bob", "123456789")
     ]
     assert empty_session.query(User).all() == expected
 
@@ -251,15 +251,15 @@ def test_saving_of_users(empty_session):
     empty_session.commit()
 
     rows = list(empty_session.execute('SELECT username, password FROM users'))
-    assert rows == [("Bob", "Thisisbob1")]
+    assert rows == [("bob", "123")]
 
 
 def test_saving_of_users_with_common_username(empty_session):
-    insert_user(empty_session, ("Bob", "1234"))
+    insert_user(empty_session, ("bob", "1234"))
     empty_session.commit()
 
     with pytest.raises(IntegrityError):
-        user = User("Bob", "Thisisbob1")
+        user = User("bob", "Thisisbob1")
         empty_session.add(user)
         empty_session.commit()
 
@@ -269,22 +269,28 @@ def test_loading_of_reviewed_movie(empty_session):
     movie = make_movie()
 
     rows = empty_session.query(Review).all()
-    review = rows[0]
+    review1 = rows[0]
+    review2 = rows[1]
 
-    assert review.__movie == movie
-    assert review.__review_text == "Review 1"
+    assert review1.movie == movie
+    assert review1.review_text == "Review 1"
+    assert review2.movie == movie
+    assert review2.review_text == "Review 2"
 
 
 def test_save_reviewed_movie(empty_session):
     # Create Movie and User objects.
     movie = make_movie()
+    user = make_user()
 
     # Create a new Review.
     comment_text = "Some comment text."
     review = Review(movie, comment_text, 5)
+    user.add_review(review)
 
-    # Save the new Movie and Review.
+    # Save the new Movie, Review and User.
     empty_session.add(movie)
+    empty_session.add(user)
     empty_session.add(review)
     empty_session.commit()
 
@@ -303,15 +309,17 @@ def test_save_reviewed_movie(empty_session):
 
 def test_saving_of_review(empty_session):
     movie_key = insert_movie(empty_session)
-    user_key = insert_user(empty_session, ("Bob", "123"))
+    user_key = insert_user(empty_session, ("bob", "123"))
 
     rows = empty_session.query(Movie).all()
     movie = rows[0]
+    rows = empty_session.query(User).all()
+    user = rows[0]
 
     # Create a new Review.
     comment_text = "Some comment text."
     review = Review(movie, comment_text, 5)
-
+    user.add_review(review)
     empty_session.add(review)
     empty_session.commit()
 
