@@ -30,10 +30,10 @@ movies = Table(
     Column('description', String(1024), nullable=False),
     Column('director_id', ForeignKey('directors.id')),
     Column('runtime_minutes', Integer, nullable=False),
-    Column('rating', Float, nullable=True),
-    Column('votes', Integer, nullable=True),
-    Column('revenue_in_millions', Float, nullable=True),
-    Column('metascore', Integer, nullable=True)
+    Column('rating', Float),
+    Column('votes', Integer),
+    Column('revenue_in_millions', Float),
+    Column('metascore', Integer)
 )
 
 movie_actors = Table(
@@ -83,30 +83,30 @@ def map_model_to_tables():
     })
 
     mapper(model.Movie, movies, properties={
+        '__rank': movies.c.id,
         '__title': movies.c.title,
         '__release_year': movies.c.release_year,
-        '__rank': movies.c.id,
         '__description': movies.c.description,
-        '__director': relationship(model.Director, backref='_movie'),
-        '__actors': relationship(actor_mapper, secondary=movie_actors, backref='_movie'),
-        '__genres': relationship(genre_mapper, secondary=movie_genres, backref='_movie'),
         '__runtime_minutes': movies.c.runtime_minutes,
         '__rating': movies.c.rating,
         '__votes': movies.c.votes,
         '__revenue': movies.c.revenue_in_millions,
-        '__metascore': movies.c.metascore
+        '__metascore': movies.c.metascore,
+        '__director': relationship(model.Director, backref='_movie'),
+        '__actors': relationship(actor_mapper, secondary=movie_actors, backref='_movie'),
+        '__genres': relationship(genre_mapper, secondary=movie_genres, backref='_movie'),
     })
 
     mapper(model.Review, reviews, properties={
-        '__movie': relationship(model.Movie, backref='_review'),
         '__review_text': reviews.c.review_text,
         '__rating': reviews.c.rating,
-        '__timestamp': reviews.c.timestamp
+        '__timestamp': reviews.c.timestamp,
+        '__movie': relationship(model.Movie, backref='_review'),
     })
 
     mapper(model.User, users, properties={
         '__user_name': users.c.username,
         '__password': users.c.password,
-        '__reviews': relationship(model.Review, backref='_user'),
-        '__time_spent_watching_movies_minutes': users.c.time_spent_watching_movies_minutes
+        '__time_spent_watching_movies_minutes': users.c.time_spent_watching_movies_minutes,
+        '__reviews': relationship(model.Review, backref='_user')
     })
