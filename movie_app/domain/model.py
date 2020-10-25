@@ -338,7 +338,7 @@ class MovieFileCSVReader:
             movie_file_reader = csv.DictReader(csvfile)
             i = 0
             for row in movie_file_reader:
-                # reading from csv
+                # reading from csv.
                 movie_rank = int(row['Rank'].strip())
                 title = row['Title']
                 genres = row['Genre'].split(',')
@@ -354,7 +354,7 @@ class MovieFileCSVReader:
                 movie_metascore = int(row['Metascore'].strip()) \
                     if row['Metascore'].strip() != 'N/A' else row['Metascore'].strip()
 
-                # assigning to respective objects
+                # assigning to respective objects.
                 movie_director = Director(director)
                 movie_genres = list()
                 for g in genres:
@@ -365,7 +365,7 @@ class MovieFileCSVReader:
                     actor = a.strip()
                     movie_actors.append(Actor(actor))
 
-                # assigning to respective datasets
+                # assigning to respective datasets.
                 self.__dataset_of_movies.append(Movie(title, year))
                 self.__dataset_of_movies[len(self.__dataset_of_movies)-1].rank = movie_rank
                 self.__dataset_of_movies[len(self.__dataset_of_movies)-1].genres = movie_genres

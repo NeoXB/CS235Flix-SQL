@@ -1,6 +1,6 @@
 import csv
 import os
-from datetime import date
+from datetime import datetime
 from typing import List
 from sqlalchemy import desc, asc
 from sqlalchemy.engine import Engine
@@ -8,10 +8,12 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from werkzeug.security import generate_password_hash
 from sqlalchemy.orm import scoped_session
 from flask import _app_ctx_stack
-from movie_app.domain.model import Director, Genre, Actor, Movie, MovieFileCSVReader, Review, User, WatchList
+from movie_app.domain.model import Director, Genre, Actor, Movie, Review, User, WatchList
 from movie_app.adapters.repository import AbstractRepository
 
+directors = None
 genres = None
+actors = None
 
 
 class SessionContextManager:
@@ -177,21 +179,76 @@ class SqlAlchemyRepository(AbstractRepository):
     def get_watchlist(self, user: User) -> List[WatchList]:
         pass
 
-# CONTINUE HERE
+
 def csv_processor(filename: str):
     with open(filename, mode='r', encoding='utf-8-sig') as csvfile:
         movie_file_reader = csv.DictReader(csvfile)
-        i = 0
         for row in movie_file_reader:
-            # reading from csv
+            # Reading from csv.
             movie_rank = int(row['Rank'].strip())
-            title = row['Title']
-            genres = row['Genre'].split(',')
+            movie_genres = row['Genre'].split(',')
+            movie_director = row['Director'].strip()
+            movie_actors = row['Actors'].split(',')
+
+            # Add any new director; associate the current movie with director.
+            if movie_director not in directors.keys():
+                directors[movie_director] = list()
+            directors[movie_director].append(movie_rank)
+
+            # Add any new genres; associate the current movie with genres.
+            for genre in movie_genres:
+                if genre not in genres.keys():
+                    genres[genre] = list()
+                genres[genre].append(movie_rank)
+
+            # Add any new actors; associate the current movie with actors.
+            for actor in movie_actors:
+                if actor not in actors.keys():
+                    actors[actor] = list()
+                actors[actor].append(movie_rank)
+
+
+def director_generator():
+    director_records = list()
+    director_key = 0
+
+    for director in directors.keys():
+        director_key += 1
+        director_records.append((director_key, director))
+    return director_records
+
+
+def genre_generator():
+    genre_records = list()
+    genre_key = 0
+
+    for genre in genres.keys():
+        genre_key += 1
+        genre_records.append((genre_key, genre))
+    return genre_records
+
+
+def actor_generator():
+    actor_records = list()
+    actor_key = 0
+
+    for actor in actors.keys():
+        actor_key += 1
+        actor_records.append((actor_key, actor))
+    return actor_records
+
+
+def movie_generator(filename: str):
+    with open(filename, mode='r', encoding='utf-8-sig') as csvfile:
+        movie_file_reader = csv.DictReader(csvfile)
+        for row in movie_file_reader:
+            # Reading from csv.
+            movie_rank = int(row['Rank'].strip())
+            movie_title = row['Title']
             movie_description = row['Description'].strip()
-            director = row['Director'].strip()
-            actors = row['Actors'].split(',')
-            year = int(row['Year'].strip())
-            runtime = int(row['Runtime (Minutes)'].strip())
+            movie_director = row['Director'].strip()
+            movie_year = int(row['Year'].strip())
+            movie_runtime = int(row['Runtime (Minutes)'].strip())
             movie_rating = float(row['Rating'].strip()) if row['Rating'].strip() != 'N/A' else row['Rating'].strip()
             movie_votes = int(row['Votes'].strip()) if row['Votes'].strip() != 'N/A' else row['Votes'].strip()
             movie_revenue = float(row['Revenue (Millions)'].strip()) \
@@ -199,56 +256,43 @@ def csv_processor(filename: str):
             movie_metascore = int(row['Metascore'].strip()) \
                 if row['Metascore'].strip() != 'N/A' else row['Metascore'].strip()
 
-            # assigning to respective objects
-            movie_director = Director(director)
-            movie_genres = list()
-            for g in genres:
-                genre = g.strip()
-                movie_genres.append(Genre(genre))
-            movie_actors = list()
-            for a in actors:
-                actor = a.strip()
-                movie_actors.append(Actor(actor))
+            # Get director id for movie.
+            director_records = list()
+            director_key = 0
 
-            # assigning to respective datasets
-            self.__dataset_of_movies.append(Movie(title, year))
-            self.__dataset_of_movies[len(self.__dataset_of_movies) - 1].rank = movie_rank
-            self.__dataset_of_movies[len(self.__dataset_of_movies) - 1].genres = movie_genres
-            self.__dataset_of_movies[len(self.__dataset_of_movies) - 1].description = movie_description
-            self.__dataset_of_movies[len(self.__dataset_of_movies) - 1].director = movie_director
-            self.__dataset_of_movies[len(self.__dataset_of_movies) - 1].actors = movie_actors
-            self.__dataset_of_movies[len(self.__dataset_of_movies) - 1].runtime_minutes = runtime
-            self.__dataset_of_movies[len(self.__dataset_of_movies) - 1].rating = movie_rating
-            self.__dataset_of_movies[len(self.__dataset_of_movies) - 1].votes = movie_votes
-            self.__dataset_of_movies[len(self.__dataset_of_movies) - 1].revenue = movie_revenue
-            self.__dataset_of_movies[len(self.__dataset_of_movies) - 1].metascore = movie_metascore
-            for a in movie_actors:
-                self.__dataset_of_actors.add(a)
-            self.__dataset_of_directors.add(movie_director)
-            for g in movie_genres:
-                self.__dataset_of_genres.add(g)
-            i += 1
+            for director in directors.keys():
+                director_key += 1
+                director_records.append((director_key, director))
+
+            director_id = 0
+            for record in director_records:
+                if record[1] == movie_director:
+                    director_id = record[0]
+
+            yield movie_rank, movie_title, movie_year, movie_description, director_id, movie_runtime, movie_rating, \
+                movie_votes, movie_revenue, movie_metascore
 
 
-def get_tag_records():
-    tag_records = list()
-    tag_key = 0
+def movie_actors_generator():
+    movie_actors_key = 0
+    actor_key = 0
 
-    for tag in tags.keys():
-        tag_key = tag_key + 1
-        tag_records.append((tag_key, tag))
-    return tag_records
+    for actor in actors.keys():
+        actor_key += 1
+        for movie_key in actors[actor]:
+            movie_actors_key += 1
+            yield movie_actors_key, movie_key, actor_key
 
 
-def article_tags_generator():
-    article_tags_key = 0
-    tag_key = 0
+def movie_genres_generator():
+    movie_genres_key = 0
+    genre_key = 0
 
-    for tag in tags.keys():
-        tag_key = tag_key + 1
-        for article_key in tags[tag]:
-            article_tags_key = article_tags_key + 1
-            yield article_tags_key, article_key, tag_key
+    for genre in genres.keys():
+        genre_key += 1
+        for movie_key in genres[genre]:
+            movie_genres_key += 1
+            yield movie_genres_key, movie_key, genre_key
 
 
 def generic_generator(filename, post_process=None):
@@ -277,39 +321,55 @@ def populate(engine: Engine, data_path: str):
     conn = engine.raw_connection()
     cursor = conn.cursor()
 
-    global tags
-    tags = dict()
+    global directors, genres, actors
+    directors = dict()
+    genres = dict()
+    actors = dict()
 
-    insert_articles = """
-        INSERT INTO articles (
-        id, date, title, first_para, hyperlink, image_hyperlink)
-        VALUES (?, ?, ?, ?, ?, ?)"""
-    cursor.executemany(insert_articles, article_record_generator(os.path.join(data_path, 'news_articles.csv')))
+    csv_processor(os.path.join(data_path, 'Data1000Movies.csv'))
 
-    insert_tags = """
-        INSERT INTO tags (
-        id, name)
+    insert_directors = """
+        INSERT INTO directors (id, director_full_name)
         VALUES (?, ?)"""
-    cursor.executemany(insert_tags, get_tag_records())
+    cursor.executemany(insert_directors, director_generator())
 
-    insert_article_tags = """
-        INSERT INTO article_tags (
-        id, article_id, tag_id)
+    insert_genres = """
+        INSERT INTO genres (id, genre_name)
+        VALUES (?, ?)"""
+    cursor.executemany(insert_genres, genre_generator())
+
+    insert_actors = """
+        INSERT INTO actors (id, actor_full_name)
+        VALUES (?, ?)"""
+    cursor.executemany(insert_actors, actor_generator())
+
+    insert_movies = """
+        INSERT INTO movies (id, title, release_year, description, director_id, runtime_minutes, rating, votes, 
+        revenue_in_millions, metascore)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+    cursor.executemany(insert_movies, movie_generator(os.path.join(data_path, 'Data1000Movies.csv')))
+
+    insert_movie_actors = """
+        INSERT INTO movie_actors (id, movie_id, actor_id)
         VALUES (?, ?, ?)"""
-    cursor.executemany(insert_article_tags, article_tags_generator())
+    cursor.executemany(insert_movie_actors, movie_actors_generator())
 
+    insert_movie_genres = """
+        INSERT INTO movie_genres (id, movie_id, genre_id)
+        VALUES (?, ?, ?)"""
+    cursor.executemany(insert_movie_genres, movie_genres_generator())
+
+    default_review = [1, 1, 'GOTG is my new favourite movie of all time!', 10, datetime.now(), 1]
+    insert_reviews = """
+        INSERT INTO reviews (id, movie_id, review_text, rating, timestamp, user_id)
+        VALUES (?, ?, ?, ?, ?, ?)"""
+    cursor.executemany(insert_reviews, default_review)
+
+    default_user = [1, 'nton939', generate_password_hash('nton939Password'), 121]
     insert_users = """
-        INSERT INTO users (
-        id, username, password)
-        VALUES (?, ?, ?)"""
-    cursor.executemany(insert_users, generic_generator(os.path.join(data_path, 'users.csv'), process_user))
-
-    insert_comments = """
-        INSERT INTO comments (
-        id, user_id, article_id, comment, timestamp)
-        VALUES (?, ?, ?, ?, ?)"""
-    cursor.executemany(insert_comments, generic_generator(os.path.join(data_path, 'comments.csv')))
+        INSERT INTO users (id, username, password, time_spent_watching_movies_minutes)
+        VALUES (?, ?, ?, ?)"""
+    cursor.executemany(insert_users, default_user)
 
     conn.commit()
     conn.close()
-

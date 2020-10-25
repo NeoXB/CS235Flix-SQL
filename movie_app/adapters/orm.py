@@ -22,13 +22,6 @@ actors = Table(
     Column('actor_full_name', String(255), nullable=False),
 )
 
-actor_colleagues = Table(
-    'actor_colleagues', metadata,
-    Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('actor_id', ForeignKey('actors.id')),
-    Column('colleague_id', ForeignKey('actors.id'))
-)
-
 movies = Table(
     'movies', metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
@@ -75,13 +68,6 @@ users = Table(
     Column('time_spent_watching_movies_minutes', Integer, nullable=False)
 )
 
-user_watched_movies = Table(
-    'user_watched_movies', metadata,
-    Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('user_id', ForeignKey('users.id')),
-    Column('movie_id', ForeignKey('movies.id'))
-)
-
 
 def map_model_to_tables():
     mapper(model.Director, directors, properties={
@@ -93,11 +79,10 @@ def map_model_to_tables():
     })
 
     actor_mapper = mapper(model.Actor, actors, properties={
-        '__actor_full_name': actors.c.actor_full_name,
-        '__actor_colleague': relationship(model.Actor, secondary=actor_colleagues, backref='_actor')
+        '__actor_full_name': actors.c.actor_full_name
     })
 
-    movie_mapper = mapper(model.Movie, movies, properties={
+    mapper(model.Movie, movies, properties={
         '__title': movies.c.title,
         '__release_year': movies.c.release_year,
         '__rank': movies.c.id,
@@ -121,8 +106,7 @@ def map_model_to_tables():
 
     mapper(model.User, users, properties={
         '__user_name': users.c.username,
-        '_password': users.c.password,
-        '__watched_movies': relationship(movie_mapper, secondary=user_watched_movies, backref='_user'),
+        '__password': users.c.password,
         '__reviews': relationship(model.Review, backref='_user'),
         '__time_spent_watching_movies_minutes': users.c.time_spent_watching_movies_minutes
     })
