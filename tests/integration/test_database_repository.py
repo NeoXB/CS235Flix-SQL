@@ -1,4 +1,3 @@
-from datetime import date, datetime
 import pytest
 from movie_app.adapters.database_repository import SqlAlchemyRepository
 from movie_app.domain.model import Director, Genre, Actor, Movie, Review, User
@@ -111,131 +110,146 @@ def test_repo_does_not_retrieve_non_existent_movie(session_factory):
     movie = repo.get_movie(1001)
     assert movie is None
 
-# Continue here
-def test_repo_can_get_first_movie(in_memory_repo):
-    movie = in_memory_repo.get_first_movie()
+
+def test_repo_can_get_first_movie(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    movie = repo.get_first_movie()
     assert movie.title == 'Guardians of the Galaxy'
 
 
-def test_repo_can_get_last_movie(in_memory_repo):
-    movie = in_memory_repo.get_last_movie()
+def test_repo_can_get_last_movie(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    movie = repo.get_last_movie()
     assert movie.title == 'Nine Lives'
 
 
-def test_repo_can_retrieve_movie_count(in_memory_repo):
-    no_of_movies = in_memory_repo.get_number_of_movies()
-    assert no_of_movies == 1000
+def test_repo_can_retrieve_movie_count(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    number_of_movies = repo.get_number_of_movies()
+
+    # Check that the query returned 1000 Movies.
+    assert number_of_movies == 1000
 
 
-def test_repo_can_get_movies_by_ranks(in_memory_repo):
-    movies = in_memory_repo.get_movies_by_rank([1, 2, 3])
+def test_repo_can_get_movies_by_ranks(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    movies = repo.get_movies_by_rank([1, 2, 3])
+
     assert len(movies) == 3
     assert movies[0].title == 'Guardians of the Galaxy'
     assert movies[1].title == 'Prometheus'
     assert movies[2].title == 'Split'
 
 
-def test_repo_does_not_retrieve_movie_for_non_existent_rank(in_memory_repo):
-    movies = in_memory_repo.get_movies_by_rank([1000, 1001])
+def test_repo_does_not_retrieve_movie_for_non_existent_rank(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    movies = repo.get_movies_by_rank([1000, 1001])
+
     assert len(movies) == 1
     assert movies[0].title == 'Nine Lives'
 
 
-def test_repo_returns_an_empty_list_for_non_existent_ranks(in_memory_repo):
-    movies = in_memory_repo.get_movies_by_rank([1111, 2222])
+def test_repo_returns_an_empty_list_for_non_existent_ranks(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    movies = repo.get_movies_by_rank([0, 1001])
+
     assert len(movies) == 0
 
 
-def test_repo_returns_movie_ranks_for_existing_genre(in_memory_repo):
-    movie_ranks = in_memory_repo.get_movie_ranks_for_genre('Action')
+def test_repo_returns_movie_ranks_for_existing_genre(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    movie_ranks = repo.get_movie_ranks_for_genre('Action')
+
     assert len(movie_ranks) == 303
 
 
-def test_repo_returns_an_empty_list_for_non_existent_genre(in_memory_repo):
-    movie_ranks = in_memory_repo.get_movie_ranks_for_genre('Anime')
+def test_repo_returns_an_empty_list_for_non_existent_genre(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    movie_ranks = repo.get_movie_ranks_for_genre('Anime')
+
     assert len(movie_ranks) == 0
 
 
-def test_repo_can_add_review(in_memory_repo):
-    movie = in_memory_repo.get_movie(10)
-    review = Review(movie=movie, txt='It was average.', rating=5)
-    in_memory_repo.add_review(review)
-    assert review in in_memory_repo.get_reviews()
+def test_repo_can_add_review(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    #user = repo.get_user('nton939')
+    movie = repo.get_movie(500)
+    review = Review(movie, "wow!", 10)
+    #user.add_review(review)
+
+    repo.add_review(review)
+
+    assert review in repo.get_reviews()
 
 
-def test_repo_does_not_add_review_without_a_movie(in_memory_repo):
-    movie = in_memory_repo.get_movie(2000)
-    review = Review(movie=movie, txt='Wow! Such a cool movie!', rating=10)
+def test_repo_does_not_add_review_without_a_movie(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    movie = repo.get_movie(0)
+    review = Review(movie, "good", 7)
+
     with pytest.raises(RepositoryException):
-        in_memory_repo.add_review(review)
+        repo.add_review(review)
 
 
-def test_repo_can_retrieve_reviews(in_memory_repo):
-    assert len(in_memory_repo.get_reviews()) == 1
+def test_repo_can_retrieve_reviews(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    assert len(repo.get_reviews()) == 1
 
 
-def test_repo_can_add_user(in_memory_repo):
-    user = User('person', '123456789')
-    in_memory_repo.add_user(user)
-    assert in_memory_repo.get_user('person') == user
+def test_repo_can_add_user(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    user = User('Artemis', '123456789')
+    repo.add_user(user)
+
+    repo.add_user(User('Jaeyun', '123456789'))
+
+    user2 = repo.get_user('Artemis')
+
+    assert user2 == user and user2 is user
 
 
-def test_repo_can_retrieve_user(in_memory_repo):
-    user = in_memory_repo.get_user('nton939')
+def test_repo_can_retrieve_user(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    user = repo.get_user('nton939')
     assert user == User('nton939', 'nton939Password')
 
 
-def test_repo_does_not_retrieve_non_existent_user(in_memory_repo):
-    user = in_memory_repo.get_user('bob')
+def test_repo_does_not_retrieve_non_existent_user(session_factory):
+    repo = SqlAlchemyRepository(session_factory)
+
+    user = repo.get_user('Cross')
     assert user is None
 
 
-def test_repo_can_add_watchlist(in_memory_repo):
-    movies = in_memory_repo.get_movies_by_rank([1, 500, 1000])
-    user = in_memory_repo.get_user('nton939')
-    watchlist = WatchList(user, 'want to watch')
-    for movie in movies:
-        watchlist.add_movie(movie)
-    in_memory_repo.add_watchlist(watchlist)
-    assert len(in_memory_repo.get_watchlist(user)) == 2
-
-
-def test_repo_can_retrieve_watchlist(in_memory_repo):
-    user = in_memory_repo.get_user('nton939')
-    watchlist = in_memory_repo.get_watchlist(user)
-    assert len(watchlist) == 1
-
-
-def test_repo_does_not_retrieve_non_existent_watchlist(in_memory_repo):
-    user = in_memory_repo.get_user('abc')
-    watchlist = in_memory_repo.get_watchlist(user)
-    assert len(watchlist) == 0
-
-
-
-def make_article(new_article_date):
-    article = Article(
-        new_article_date,
-        'Coronavirus travel restrictions: Self-isolation deadline pushed back to give airlines breathing room',
-        'The self-isolation deadline has been pushed back',
-        'https://www.nzherald.co.nz/business/news/article.cfm?c_id=3&objectid=12316800',
-        'https://th.bing.com/th/id/OIP.0lCxLKfDnOyswQCF9rcv7AHaCz?w=344&h=132&c=7&o=5&pid=1.7'
-    )
-    return article
-
-def test_can_retrieve_an_article_and_add_a_comment_to_it(session_factory):
+def test_can_retrieve_movie_and_add_review_to_it(session_factory):
     repo = SqlAlchemyRepository(session_factory)
 
-    # Fetch Article and User.
-    article = repo.get_article(5)
-    author = repo.get_user('thorke')
+    # Fetch Movie and User.
+    movie = repo.get_movie(1000)
+    user = repo.get_user('nton939')
 
-    # Create a new Comment, connecting it to the Article and User.
-    comment = make_comment('First death in Australia', author, article)
+    # Create a new Review, connecting it to the Movie and User.
+    review = Review(movie, "So good!", 9)
+    user.add_review(review)
+    repo.add_review(review)
 
-    article_fetched = repo.get_article(5)
-    author_fetched = repo.get_user('thorke')
+    fetched_reviews = repo.get_reviews()
+    fetched_user = repo.get_user('nton939')
+    fetched_movie = repo.get_movie(1000)
 
-    assert comment in article_fetched.comments
-    assert comment in author_fetched.comments
-
+    assert review in fetched_reviews
+    assert review in fetched_user.reviews
+    assert fetched_reviews[1].movie == fetched_movie

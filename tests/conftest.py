@@ -7,8 +7,10 @@ from movie_app.adapters import memory_repository, database_repository
 from movie_app.adapters.orm import metadata, map_model_to_tables
 from movie_app.adapters.memory_repository import MemoryRepository
 
-TEST_DATA_PATH_MEMORY = os.path.join('C:', os.sep, 'Documents', 'CS235Flix-SQL', 'tests', 'data', 'memory')
-TEST_DATA_PATH_DATABASE = os.path.join('C:', os.sep, 'Documents', 'CS235Flix-SQL', 'tests', 'data', 'database')
+TEST_DATA_PATH_MEMORY = \
+    os.path.join('C:', os.sep, 'Users', 'neoxb', 'Documents', 'CS235Flix', 'tests', 'data', 'memory')
+TEST_DATA_PATH_DATABASE = \
+    os.path.join('C:', os.sep, 'Users', 'neoxb', 'Documents', 'CS235Flix', 'tests', 'data', 'database')
 
 TEST_DATABASE_URI_IN_MEMORY = 'sqlite://'
 TEST_DATABASE_URI_FILE = 'sqlite:///movie-test.db'
