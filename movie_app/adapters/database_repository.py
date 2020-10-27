@@ -66,7 +66,8 @@ class SqlAlchemyRepository(AbstractRepository):
     def get_director(self, director_name) -> Director:
         director = None
         try:
-            director = self._session_cm.session.query(Director).filter_by(__director_full_name=director_name).one()
+            director = \
+                self._session_cm.session.query(Director).filter_by(_Director__director_full_name=director_name).one()
         except NoResultFound:
             # Ignore any exception and return None.
             pass
@@ -90,7 +91,7 @@ class SqlAlchemyRepository(AbstractRepository):
     def get_actor(self, actor_name) -> Actor:
         actor = None
         try:
-            actor = self._session_cm.session.query(Actor).filter_by(__actor_full_name=actor_name).one()
+            actor = self._session_cm.session.query(Actor).filter_by(_Actor__actor_full_name=actor_name).one()
         except NoResultFound:
             # Ignore any exception and return None.
             pass
@@ -105,7 +106,7 @@ class SqlAlchemyRepository(AbstractRepository):
     def get_movie(self, rank: int) -> Movie:
         movie = None
         try:
-            movie = self._session_cm.session.query(Movie).filter(Movie.__rank == rank).one()
+            movie = self._session_cm.session.query(Movie).filter(Movie._Movie__rank == rank).one()
         except NoResultFound:
             # Ignore any exception and return None.
             pass
@@ -121,11 +122,11 @@ class SqlAlchemyRepository(AbstractRepository):
         return movie
 
     def get_last_movie(self) -> Movie:
-        movie = self._session_cm.session.query(Movie).order_by(desc(Movie.__rank)).first()
+        movie = self._session_cm.session.query(Movie).order_by(desc(Movie._Movie__rank)).first()
         return movie
 
     def get_movies_by_rank(self, rank_list):
-        movies = self._session_cm.session.query(Movie).filter(Movie.__rank.in_(rank_list)).all()
+        movies = self._session_cm.session.query(Movie).filter(Movie._Movie__rank.in_(rank_list)).all()
         return movies
 
     def get_movie_ranks_for_genre(self, genre_name: str):
@@ -166,7 +167,7 @@ class SqlAlchemyRepository(AbstractRepository):
     def get_user(self, username: str) -> User:
         user = None
         try:
-            user = self._session_cm.session.query(User).filter_by(__user_name=username).one()
+            user = self._session_cm.session.query(User).filter_by(_User__user_name=username).one()
         except NoResultFound:
             # Ignore any exception and return None.
             pass
@@ -189,6 +190,13 @@ def csv_processor(filename: str):
             movie_genres = row['Genre'].split(',')
             movie_director = row['Director'].strip()
             movie_actors = row['Actors'].split(',')
+
+            # Remove leading/trailing blank lines from genre and actor names
+            for i in range(len(movie_genres)):
+                movie_genres[i] = movie_genres[i].strip()
+
+            for i in range(len(movie_actors)):
+                movie_actors[i] = movie_actors[i].strip()
 
             # Add any new director; associate the current movie with director.
             if movie_director not in directors.keys():
@@ -363,13 +371,13 @@ def populate(engine: Engine, data_path: str):
     insert_reviews = """
         INSERT INTO reviews (id, movie_id, review_text, rating, timestamp, user_id)
         VALUES (?, ?, ?, ?, ?, ?)"""
-    cursor.executemany(insert_reviews, default_review)
+    cursor.execute(insert_reviews, default_review)
 
     default_user = [1, 'nton939', generate_password_hash('nton939Password'), 121]
     insert_users = """
         INSERT INTO users (id, username, password, time_spent_watching_movies_minutes)
         VALUES (?, ?, ?, ?)"""
-    cursor.executemany(insert_users, default_user)
+    cursor.execute(insert_users, default_user)
 
     conn.commit()
     conn.close()

@@ -57,7 +57,7 @@ def test_repo_can_retrieve_actor(session_factory):
     repo = SqlAlchemyRepository(session_factory)
 
     actor = repo.get_actor('Vin Diesel')
-    assert actor == Director('Vin Diesel')
+    assert actor == Actor('Vin Diesel')
 
 
 def test_repo_does_not_retrieve_non_existent_actor(session_factory):
@@ -215,7 +215,7 @@ def test_repo_can_add_user(session_factory):
 
     repo.add_user(User('Jaeyun', '123456789'))
 
-    user2 = repo.get_user('Artemis')
+    user2 = repo.get_user('artemis')
 
     assert user2 == user and user2 is user
 

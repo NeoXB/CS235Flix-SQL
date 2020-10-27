@@ -7,10 +7,7 @@ from movie_app.adapters import memory_repository, database_repository
 from movie_app.adapters.orm import metadata, map_model_to_tables
 from movie_app.adapters.memory_repository import MemoryRepository
 
-TEST_DATA_PATH_MEMORY = \
-    os.path.join('C:', os.sep, 'Users', 'neoxb', 'Documents', 'CS235Flix', 'tests', 'data', 'memory')
-TEST_DATA_PATH_DATABASE = \
-    os.path.join('C:', os.sep, 'Users', 'neoxb', 'Documents', 'CS235Flix', 'tests', 'data', 'database')
+TEST_DATA_PATH = os.path.join('C:', os.sep, 'Users', 'neoxb', 'Documents', 'CS235Flix', 'tests', 'data')
 
 TEST_DATABASE_URI_IN_MEMORY = 'sqlite://'
 TEST_DATABASE_URI_FILE = 'sqlite:///movie-test.db'
@@ -19,7 +16,7 @@ TEST_DATABASE_URI_FILE = 'sqlite:///movie-test.db'
 @pytest.fixture
 def in_memory_repo():
     repo = MemoryRepository()
-    memory_repository.populate(TEST_DATA_PATH_MEMORY, repo)
+    memory_repository.populate(TEST_DATA_PATH, repo)
     return repo
 
 
@@ -31,7 +28,7 @@ def database_engine():
     for table in reversed(metadata.sorted_tables):  # Remove any data from the tables.
         engine.execute(table.delete())
     map_model_to_tables()
-    database_repository.populate(engine, TEST_DATA_PATH_DATABASE)
+    database_repository.populate(engine, TEST_DATA_PATH)
     yield engine
     metadata.drop_all(engine)
     clear_mappers()
@@ -59,7 +56,7 @@ def session():
         engine.execute(table.delete())
     map_model_to_tables()
     session_factory = sessionmaker(bind=engine)
-    database_repository.populate(engine, TEST_DATA_PATH_DATABASE)
+    database_repository.populate(engine, TEST_DATA_PATH)
     yield session_factory()
     metadata.drop_all(engine)
     clear_mappers()
@@ -74,7 +71,7 @@ def session_factory():
         engine.execute(table.delete())
     map_model_to_tables()
     session_factory = sessionmaker(bind=engine)
-    database_repository.populate(engine, TEST_DATA_PATH_DATABASE)
+    database_repository.populate(engine, TEST_DATA_PATH)
     yield session_factory
     metadata.drop_all(engine)
     clear_mappers()
@@ -85,7 +82,7 @@ def client():
     my_app = create_app({
         'TESTING': True,                            # Set to True during testing.
         'REPOSITORY': 'database',                   # Set to 'memory' or 'database' depending on desired repository.
-        'TEST_DATA_PATH': TEST_DATA_PATH_DATABASE,  # Path for loading test data into the repository.
+        'TEST_DATA_PATH': TEST_DATA_PATH,           # Path for loading test data into the repository.
         'WTF_CSRF_ENABLED': False                   # test_client will not send a CSRF token, so disable validation.
     })
 
